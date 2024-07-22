@@ -38,17 +38,18 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
 
 // creating the lambda func
 resource "aws_lambda_function" "my_lambda" {
-  filename         = "lambda_function.zip"
   function_name    = "my_test_lambda"
   role             = aws_iam_role.lambda_exec.arn
-  handler          = "lambda_function.lambda_handler"
+  handler          = "lambda_function.handler"
   runtime          = "python3.8"
-  source_code_hash = filebase64sha256("lambda_function.zip")
+  filename      = "${path.module}/function.zip"
+  source_code_hash = filebase64sha256("${path.module}/function.zip")
 }
 
 // creating the eventbridge
 resource "aws_cloudwatch_event_rule" "my_schedule" {
   name                = "daily-schedule"
+  description = "Fires every day"
   schedule_expression = "rate(1 day)"
 }
 
