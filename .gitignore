@@ -1,0 +1,27 @@
+# .gitignore
+
+# Ignore Terraform variable files
+terraform.tfvars
+
+# Ignore Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Ignore crash log files
+crash.log
+
+# Ignore extension files created by Terraform
+*.tfvars.json
+*.tfplan
+*.tfout
+
+# Ignore .terraform directory
+.terraform
+
+# Ignore Terraform lock file
+.terraform.lock.hcl
+
+# Ignore any other sensitive or temporary files
+*.pem
+*.key
+*.crt
