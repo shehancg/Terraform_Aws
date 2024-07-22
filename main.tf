@@ -30,7 +30,7 @@ resource "aws_iam_role" "lambda_exec" {
   })
 }
 
-// Attaching thr Iam role to the lambda
+// Attaching thr Iam policy to the role
 resource "aws_iam_role_policy_attachment" "lambda_policy" {
   role       = aws_iam_role.lambda_exec.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
