@@ -46,6 +46,53 @@ resource "aws_lambda_function" "my_lambda" {
   source_code_hash = filebase64sha256("${path.module}/function.zip")
 }
 
+// Creating IAM role for eventbridge role
+resource "aws_iam_role" "eventbridge_role" {
+  name = "eventbridge_lambda_execution_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "scheduler.amazonaws.com"
+      }
+    }]
+  })
+}
+
+// Applying policy for above IAM role
+resource "aws_iam_role_policy_attachment" "eventbridge_lambda_policy" {
+  role       = aws_iam_role.eventbridge_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
+}
+
+// creating the eventbridge schedules
+resource "aws_scheduler_schedule" "my_schedule" {
+  name        = "my-schedule"
+  description = "Fires every day"
+  group_name  = "default"
+  flexible_time_window {
+    mode = "OFF"
+  }
+  schedule_expression = "rate(1 day)"
+  target {
+    arn      = aws_lambda_function.my_lambda.arn
+    role_arn = aws_iam_role.eventbridge_role.arn
+  }
+}
+
+
+// giving permision for eventbridge to invoke lambda
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.my_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_scheduler_schedule.my_schedule.arn
+}
+
+
 // creating the eventbridge schedule using cloud watch rules
 /* resource "aws_cloudwatch_event_rule" "my_schedule" {
   name                = "daily-schedule"
@@ -60,32 +107,3 @@ resource "aws_lambda_function" "my_lambda" {
   target_id = "my_lambda"
   arn       = aws_lambda_function.my_lambda.arn
 } */
-
-
-// creating the eventbridge schedules
-resource "aws_scheduler_schedule" "my_schedule" {
-  name       = "my-schedule"
-  description = "Fires every day"
-  group_name = "default"
-
-  flexible_time_window {
-    mode = "OFF"
-  }
-
-  schedule_expression = "rate(1 day)"
-
-  target {
-    arn      = aws_lambda_function.my_lambda.arn
-    role_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  }
-}
-
-
-// giving permision for eventbridge to invoke lambda
-resource "aws_lambda_permission" "allow_cloudwatch" {
-  statement_id  = "AllowExecutionFromCloudWatch"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.my_lambda.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_scheduler_schedule.my_schedule.arn
-}
