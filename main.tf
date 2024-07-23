@@ -42,8 +42,18 @@ resource "aws_lambda_function" "my_lambda" {
   role             = aws_iam_role.lambda_exec.arn
   handler          = "lambda_function.handler"
   runtime          = "python3.8"
-  filename      = "${path.module}/function.zip"
+  filename         = "${path.module}/function.zip"
   source_code_hash = filebase64sha256("${path.module}/function.zip")
+
+  // create a new version when the function is updated
+  publish = true 
+}
+
+// Creating a Lambda function alias
+resource "aws_lambda_alias" "my_lambda_alias" {
+  name             = "production"
+  function_name    = aws_lambda_function.my_lambda.function_name
+  function_version = aws_lambda_function.my_lambda.version
 }
 
 // Creating IAM role for eventbridge role
@@ -77,7 +87,7 @@ resource "aws_scheduler_schedule" "my_schedule" {
   }
   schedule_expression = "rate(1 day)"
   target {
-    arn      = aws_lambda_function.my_lambda.arn
+    arn      = aws_lambda_alias.my_lambda_alias.arn
     role_arn = aws_iam_role.eventbridge_role.arn
   }
 }
@@ -88,6 +98,7 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.my_lambda.function_name
+  qualifier     = aws_lambda_alias.my_lambda_alias.name
   principal     = "events.amazonaws.com"
   source_arn    = aws_scheduler_schedule.my_schedule.arn
 }
