@@ -20,3 +20,8 @@ source_code_hash = filebase64sha256("lambda_function.zip")
 9. Creating the target for the event bridge
 
 10. giving permision for eventbridge to invoke lambda func
+
+- Enable versioning for Lambda function
+- Create production alias pointing to latest version
+- Update EventBridge to use Lambda alias
+- Adjust permissions for alias invocation
